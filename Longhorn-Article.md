@@ -20,7 +20,7 @@ Let's break down its key characteristics:
 
 #### Understanding Block Storage
 
-Block storage divides data into fixed-sized "blocks", each with a unique identifier. This method allows systems to retrieve or modify individual blocks independently. Unlike file storage, block storage doesn't manage data with a file-and-folder hierarchy. This characteristic makes block storage fast, flexible, and ideal for performance-critical workloads such as databases, virtual machines, transactional systems, and Kubernetes persistent volumes.
+Block storage divides data into fixed-sized "blocks", each with a unique identifier. This method allows systems to retrieve or modify individual blocks independently. Unlike file storage, block storage does not manage data with a file-and-folder hierarchy. This characteristic makes block storage fast, flexible, and ideal for performance-critical workloads such as databases, virtual machines, transactional systems, and Kubernetes persistent volumes.
 
 #### Understanding its working 
 
