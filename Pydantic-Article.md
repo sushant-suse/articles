@@ -49,6 +49,10 @@ class Product(BaseModel):
 Product(price='99')       # Allowed: '99' is converted to 99
 Product(price='99a')      # Raises ValidationError: cannot convert to int
 ```
+<!-- Maybe show here the abbreviated traceback of the ValidationError?
+    This gives readers a better understanding how this looks like.
+ -->
+
 
 In this example, a string containing numeric characters (`'99'`) is accepted and converted to an integer, while an invalid string (`'99a'`) results in a validation error.
 
@@ -79,12 +83,32 @@ print(emp)
 # Employee(id=101, name='Sam', salary=12000.0)
 ```
 
-**Observation**: Even though the `id` and `salary` fields arrive as strings, Pydantic automatically converts them to the appropriate numeric types. 
+**Observation**: Even though the `id` and `salary` fields arrive as strings, Pydantic automatically converts them to the appropriate numeric types.
+<!-- Maybe add a reference to the "Enforcing Strict Types ..." section?
+
+  I'd suggest to add something like:
+  "If you don't want or like the automatic conversion, Pydantic allows
+  to enable the strict feature (see section ...)."
+ -->
 
 > **Note**: In the above example, the `**` operator is unpacking the `json_data` dictionary into keyword arguments.
 
 ## Comparing `typing` and Pydantic
+<!-- I think this section is a bit weird. Your comparison is technically
+     correct, but IMHO it compares apples with oranges. ;)
 
+  The two modules serve completely different goals (albeit Pydantic
+  uses types a lot). The typing module was never about validation nor was
+  it a goal.
+  The "validation" (if you want to name it that way), is done by an external
+  tool.
+
+  If you want to add a comparison, you should compare it with the same
+  level of libraries. This would be dataclasses or attrs.
+  ArjanCodes has a good video about that:
+     "Attrs, Pydantic, or Python classes"
+     https://www.youtube.com/watch?v=zN4VCb0LbQI
+ -->
 [`typing`](https://docs.python.org/3/library/typing.html) is Python's built-in module that provides static type hints. It is useful for development tools and linters like `mypy` or `Pylance`. However, these hints do not enforce or validate data at runtime. This is where Pydantic adds significant value by enforcing type constraints dynamically and validating incoming data during execution.
 
 | Feature | `typing` | Pydantic |
@@ -150,10 +174,13 @@ Here, `name` must be at least three characters long, and `age` must be non-negat
 > **Note**: 
 > - To mark a field as optional, wrap the type with `Optional[...]`.
 > - Use `...` (Ellipsis) to mark a field as required when no default is provided.
+<!-- Maybe add a third list item to mention PositiveInteger
+ instead of using Field(default=18, ge=0)?
+-->
 
 ### Enforcing Strict Types with `Field(strict=True)`
 
-By default, Pydantic tries to coerce values into the expected type. This behavior is helpful in many situations. But, in some scenarios, you may need stricter validation for sensitive or critical fields. For such scenarios, ue `strict=True` to enforce exact type matching:
+By default, Pydantic tries to coerce values into the expected type. This behavior is helpful in many situations. But, in some scenarios, you may need stricter validation for sensitive or critical fields. For such scenarios, use `strict=True` to enforce exact type matching:
 
 Example:
 
@@ -171,6 +198,7 @@ User(age="21")  # Raises validation error: str is not int
 `Annotated` type was introduced in the `typing` module to allow additional metadata to be attached to a type hint. Pydantic v2 adopts `Annotated` to define constraints, descriptions, and field-level metadata in a more structured and expressive way.
 
 > Note: To learn about 
+<!-- Incomplete note? Or does the following parts belong to the note? -->
 
 Reasons to use Annotated:
 
@@ -237,13 +265,20 @@ class Patient(BaseModel):
 
 ## What are Validators and `ValidationError` in Pydantic?
 
-Pydantic supports custom data validation through [**validators**](https://docs.pydantic.dev/latest/concepts/validators/). Validators provide fine-grained control over how fields or models are validated, making them useful when built-in validation logic is insufficient.
+Pydantic supports custom data validation through [**validators**](https://docs.pydantic.dev/latest/concepts/validators/). Validators provide fine-grained control over how fields or models are validated, making them useful when the built-in validation logic is insufficient.
 
 Pydantic includes two primary types of validators: [**field validators**](https://docs.pydantic.dev/latest/concepts/validators/#field-validators) and [**model validators**](https://docs.pydantic.dev/latest/concepts/validators/#model-validators).
 
 ### Field Validators
 
 Field-level validators allow you to define custom logic for individual fields. These validators are declared using the `@field_validator` decorator. It was introduced in Pydantic v2 in combination with the `@classmethod` decorator.
+<!--
+  It sounds like the classmethod decorator was also introduced in version 2.
+  However, classmethod is a builtin Python decorator. Maybe you want to
+  distinguish between the two. Maybe use something like this:
+
+  Validators are declared using the `@field_validator` decorator. Introduced in Pydantic v2, this decorator must be used in combination with Python's standard @classmethod decorator.
+-->
 
 Example:
 
@@ -263,10 +298,13 @@ class User(BaseModel):
 
 In the above example:
 
-- `cls` refers to the model class.
+- `field_validator` decorator contains the field name to validate.
+- `cls` refers to the model class (`User`).
 - `value` is the input provided for the `username` field.
 
 > **Note**: The `@classmethod` is required here because Pydantic v2's `@field_validator` expects a class method (not a static method or instance method).
+<!-- It's important that you also mention the correct order. Otherwise
+it may not work correctly. -->
 
 You can even apply a single validator to multiple fields. 
 
@@ -294,6 +332,14 @@ In the above example, the `no_spaces_allowed()` function is executed once per fi
 ### Model Validators
 
 Model-level validators enable cross-field validation. You can use them when validation depends on the relationship between two or more fields. In Pydantic v2, the `@model_validator` decorator replaces the earlier `@root_validator` from Pydantic v1.
+<!-- Hmn, I'm not sure if I understand you correctly.
+
+     Aren't model validators methods to validate the *entire data model
+     at once*, rather than validating each field individually?
+
+    IMHO, I think you should emphasize the "validate the entire data model
+    at once" more.
+ -->
 
 ```python
 from pydantic import BaseModel, model_validator
@@ -386,6 +432,15 @@ print(user.model_dump())
 print(user.model_dump_json())
 # Output: {"name":"Sam","age":25}
 ```
+<!--
+  Your example is technically correct, but you can't really see the difference
+  (apart from the single/double quoting).
+
+  What about this:
+
+  print(type(user.model_dump()))      # would print <class 'dict'>
+  print(type(user.model_dump_json())) # would print <class 'str'>
+-->
 
 To learn about these methods in detail, check [Serialization](#understanding-serialization-in-pydantic).
 
@@ -476,6 +531,7 @@ Nested models in Pydantic allow you to:
 Pydantic offers three main types of nested model patterns:
 
 ### 1. Standard Nesting (Referencing Other Models)
+<!-- This is basically composition, right? -->
 
 The most common scenario involves referencing one Pydantic model inside another using type annotations. This lets you build layered schemas and ensures each component gets validated properly.
 
@@ -506,6 +562,9 @@ Node.model_rebuild()
 Because the class refers to itself and has not yet been fully constructed at the time of annotation, Pydantic requires `model_rebuild()` to resolve the forward reference. This ensures the `children` field is properly typed for validation and schema generation.
 
 #### 3. Forward Referencing Between Multiple Models
+<!-- Is this the correct heading level?
+  In the previous section you have three #, but here four.
+-->
 
 For mutually dependent models where, for example, an `Employee` references a `Manager`, and the `Manager` holds a list of `Employee` instances; Pydantic supports forward references using string annotations.
 
@@ -534,6 +593,25 @@ When forward references are used (either to the same model or another model that
 - Finalize model field definitions for accurate parsing and validation
 
 This post-definition step allows Pydantic to maintain correctness in complex model structures.
+
+<!-- Isn't a forth section missing? What about deriving one
+     BaseModel from another one?
+
+     For example:
+
+     class Person(BaseModel):
+        name: str
+        age:  str
+
+     class Worker(Person):
+        company : str
+        team: str
+
+     Would that be possible? Is it even recommended?
+     It introduces tight coupling which is probably not always wanted.
+     In most(?) cases, Pydantic(?) recommends composition over
+     inheritance, right?
+ -->
 
 ### Example: Nested `Comment` Model
 
